@@ -6,16 +6,17 @@ const gl = canvas.getContext('webgl2');
 const vertexShader = `#version 300 es
 precision mediump float;
 
-in vec2 position;
+in vec3 position;
 in vec3 iColor;
 out vec3 oColor;
 uniform float iTime;
 uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
 void main()
 {
-  gl_Position = projectionMatrix * modelMatrix * vec4(position, 0, 1);
+  gl_Position = projectionMatrix * viewMatrix * (modelMatrix * vec4(position, 1));
   oColor = iColor;
 }
 `;
@@ -64,59 +65,27 @@ gl.useProgram(program);
 
 //Drawing basic triangle
 const triangleCoords = [
-  // Front face
-  -1.0, -1.0,  1.0,
-  1.0, -1.0,  1.0,
-  1.0,  1.0,  1.0,
- -1.0,  1.0,  1.0,
-
- // Back face
- -1.0, -1.0, -1.0,
- -1.0,  1.0, -1.0,
-  1.0,  1.0, -1.0,
-  1.0, -1.0, -1.0,
-
- // Top face
- -1.0,  1.0, -1.0,
- -1.0,  1.0,  1.0,
-  1.0,  1.0,  1.0,
-  1.0,  1.0, -1.0,
-
- // Bottom face
- -1.0, -1.0, -1.0,
-  1.0, -1.0, -1.0,
-  1.0, -1.0,  1.0,
- -1.0, -1.0,  1.0,
-
- // Right face
-  1.0, -1.0, -1.0,
-  1.0,  1.0, -1.0,
-  1.0,  1.0,  1.0,
-  1.0, -1.0,  1.0,
-
- // Left face
- -1.0, -1.0, -1.0,
- -1.0, -1.0,  1.0,
- -1.0,  1.0,  1.0,
- -1.0,  1.0, -1.0,
+  -1,-1,-1, 1,-1,-1, 1, 1,-1, -1, 1,-1,
+  -1,-1, 1, 1,-1, 1, 1, 1, 1, -1, 1, 1,
+  -1,-1,-1, -1, 1,-1, -1, 1, 1, -1,-1, 1,
+  1,-1,-1, 1, 1,-1, 1, 1, 1, 1,-1, 1,
+  -1,-1,-1, -1,-1, 1, 1,-1, 1, 1,-1,-1,
+  -1, 1,-1, -1, 1, 1, 1, 1, 1, 1, 1,-1
 ];
 
 const vertexColorArray = [
-  1.0,  1.0,  1.0,    // Front face: white
-  1.0,  0.0,  0.0,    // Back face: red
-  0.0,  1.0,  0.0,    // Top face: green
-  0.0,  0.0,  1.0,    // Bottom face: blue
-  1.0,  1.0,  0.0,    // Right face: yellow
-  1.0,  0.0,  1.0,
+  5,3,7, 5,3,7, 5,3,7, 5,3,7,
+  1,1,3, 1,1,3, 1,1,3, 1,1,3,
+  0,0,1, 0,0,1, 0,0,1, 0,0,1,
+  1,0,0, 1,0,0, 1,0,0, 1,0,0,
+  1,1,0, 1,1,0, 1,1,0, 1,1,0,
+  0,1,0, 0,1,0, 0,1,0, 0,1,0
 ];
 
 const indexArray = [
-  0,  1,  2,      0,  2,  3,    // front
-  4,  5,  6,      4,  6,  7,    // back
-  8,  9,  10,     8,  10, 11,   // top
-  12, 13, 14,     12, 14, 15,   // bottom
-  16, 17, 18,     16, 18, 19,   // right
-  20, 21, 22,     20, 22, 23,   // left
+  0,1,2, 0,2,3, 4,5,6, 4,6,7,
+  8,9,10, 8,10,11, 12,13,14, 12,14,15,
+  16,17,18, 16,18,19, 20,21,22, 20,22,23
 ];
 
 const indexArrayBuffer = gl.createBuffer();
@@ -127,17 +96,26 @@ let now = Date.now();
 
 const uniformTime = gl.getUniformLocation(program, 'iTime');
 const uModelMatrix = gl.getUniformLocation(program, 'modelMatrix');
+const uViewMatrix = gl.getUniformLocation(program, 'viewMatrix');
 const uProjectionMatrix = gl.getUniformLocation(program, 'projectionMatrix');
 const attribVertexColor = gl.getAttribLocation(program, 'iColor');
 const attribPosition = gl.getAttribLocation(program,'position');
 
 const modelMatrix = mat4.create();
+const viewMatrix = mat4.create();
 const projectionMatrix = mat4.create();
 
-const fieldOfView = 45 * Math.PI / 180;   // in radians
-const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-const zNear = 0.1;
-const zFar = 100.0;
+mat4.scale(
+  viewMatrix,
+  viewMatrix,
+  [1, 1, 1]
+);
+
+mat4.translate(
+  viewMatrix,
+  viewMatrix,
+  [0, 0, -10]
+);
 
 const update = ()=> {
 
@@ -145,38 +123,44 @@ const update = ()=> {
   now = Date.now();
   //console.log(deltaTime);
 
-  mat4.translate(
-    modelMatrix,
-    modelMatrix,
-    [0.0, 0.0, -6.0]
-  );
-
   mat4.rotate(
     modelMatrix,
     modelMatrix,
     deltaTime * 1,
-    [0, 1, 1]
+    [1, 1, 0]
   );
-
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
   //clear screen
   gl.clearColor(0, 0, 0, 1);
-  gl.clearDepth(1.0);                 // Clear everything
-  gl.enable(gl.DEPTH_TEST);           // Enable depth testing
-  gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-
+  gl.clearDepth(1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // note: glmatrix.js always has the first argument
-  // as the destination to receive the result.
-  mat4.perspective(uProjectionMatrix,
-                   fieldOfView,
-                   aspect,
-                   zNear,
-                   zFar);
+  /*mat4.translate(
+    modelMatrix,
+    modelMatrix,
+    [0, 0, 0]
+  );*/
+
+  /*mat4.translate(
+    viewMatrix,
+    viewMatrix,
+    [0, 0, -10]
+  );*/
+
+  mat4.perspective(
+    projectionMatrix,
+    45 * (Math.PI / 180),
+    canvas.clientWidth / canvas.clientHeight,
+    1,
+    1000
+  );
 
   gl.uniform1f(uniformTime, deltaTime);
 
   gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
+  gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix);
+  gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
 
   //color
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
@@ -188,13 +172,13 @@ const update = ()=> {
   gl.bindBuffer(gl.ARRAY_BUFFER, postionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleCoords), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(attribPosition);
-  gl.vertexAttribPointer(attribPosition, 2, gl.FLOAT, gl.FALSE, 0, 0);
+  gl.vertexAttribPointer(attribPosition, 3, gl.FLOAT, gl.FALSE, 0, 0);
 
   //indices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexArrayBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW);
 
-  gl.drawElements(gl.TRIANGLES, indexArray.length, gl.UNSIGNED_SHORT, 0)
+  gl.drawElements(gl.TRIANGLES, indexArray.length, gl.UNSIGNED_SHORT, 0);
   //gl.drawArrays(gl.TRIANGLES, 0, 6);
   requestAnimationFrame(update);
 }
