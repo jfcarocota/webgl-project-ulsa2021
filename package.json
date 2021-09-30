@@ -1,0 +1,29 @@
+{
+  "name": "webgl-project-ulsa2021",
+  "version": "0.0.1",
+  "description": "WebGL App for AR and VR (XR).",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfcarocota/webgl-project-ulsa2021.git"
+  },
+  "keywords": [
+    "vr",
+    "xr",
+    "ar",
+    "webgl"
+  ],
+  "author": "Jesús Caro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jfcarocota/webgl-project-ulsa2021/issues"
+  },
+  "homepage": "https://github.com/jfcarocota/webgl-project-ulsa2021#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
