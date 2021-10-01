@@ -3,17 +3,8 @@ import ProgramLinker from './ProgramLinker.js';
 
 class Shader {
 
-  constructor(gl, vertexShader, fragmentShader){
-    const vs = gl.VERTEX_SHADER;
-    const fs = gl.FRAGMENT_SHADER;
-
-    const vsFile = await this.getFile(vsSource);
-    const fsFile = await this.getFile(fsSource);
-
-    const vertexShader = this.loadShader(gl, vs, vsFile);
-    const fragmentShader = this.loadShader(gl, fs, fsFile);
-
-    return new ProgramLinker(gl, vertexShader, fragmentShader);
+  constructor(gl, vsSource, fsSource){
+    return this.initShader(gl, vsSource, fsSource);
   }
 
   loadShader(gl, type, source){
@@ -22,13 +13,27 @@ class Shader {
     return new ShaderCompiler(gl, shader, source);
   }
 
+  async initShader(gl, vsSource, fsSource){
+
+    const vs = gl.VERTEX_SHADER;
+    const fs = gl.FRAGMENT_SHADER;
+    const vsFile = await this.getFile(vsSource);
+    const fsFile = await this.getFile(fsSource);
+    const vertexShader = this.loadShader(gl, vs, vsFile);
+    const fragmentShader = this.loadShader(gl, fs, fsFile);
+
+    return new ProgramLinker(gl, vertexShader, fragmentShader);
+  }
+
   async getFile(filePath) {
-    return await (await fetch(filePath)).then(result => {
-      if(!restul){
+    const file = await fetch(filePath).then(res => res.text().then(data => {
+      console.log(data);
+      return data;
+    }));
+    if(!file){
         console.error(`Warning: Loading of ${filePath} Failed!`);
-      }
-      return result;
-    });
+    }
+    return file;
   }
 }
 

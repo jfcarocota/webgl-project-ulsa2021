@@ -1,10 +1,10 @@
-import Shader from "./Shader";
+import Shader from "./Shader.js";
 
 //gl context initialize
 const canvas = document.getElementById('gl-canvas');
 const gl = canvas.getContext('webgl2');
 
-const program = await new Shader(gl, "./shaders/vertexShader.glsl", "./shaders/fragmentShader.glsl");
+const program = await new Shader(gl, "../shaders/vertexShader.glsl", "../shaders/fragmentShader.glsl");
 gl.useProgram(program);
 
 let now = Date.now();
