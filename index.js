@@ -9,6 +9,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/src', express.static('src'));
 app.use('/public', express.static('public'));
 app.use('/shaders', express.static('shaders'));
+app.use('/textures', express.static('textures'));
 
 app.get('/triangle', (req, res) =>{
   res.sendFile(`${dirname}/public/triangle.htm`);
